@@ -246,39 +246,32 @@ static int open_ret_hook(struct kretprobe_instance *ri, struct pt_regs *regs) {
 }
 
 static void open_hook(int dfd, const char __user *filename, int flags, int mode) {
-	if (syscall & LEVEL_FS_R) {
+	if (syscall & LEVEL_FS_R || trace_open) {
 		printk(KERN_INFO MODULE_NAME": open[PID: %d (%s)]: file:%s\n", task_pid_nr(current), current->comm, filename);
 	}
 
 	jprobe_return();
 }
 
+static char *console_argv[] = { "/firmadyne/console", NULL };
+
 static void execve_hook(char *filename, const char __user *const __user *argv, const char __user *const __user *envp, struct pt_regs *regs) {
-	int i;
-	static char *argv_init[] = { "/firmadyne/console", NULL };
-
-	if (execute > 5) {
-		execute = 0;
-
-		printk(KERN_INFO MODULE_NAME": do_execve: %s\n", argv_init[0]);
-		call_usermodehelper(argv_init[0], argv_init, envp_init, UMH_NO_WAIT);
-
-		printk(KERN_WARNING "OFFSETS: offset of pid: 0x%x offset of comm: 0x%x\n", offsetof(struct task_struct, pid), offsetof(struct task_struct, comm));
-	}
-	else if (execute > 0) {
-		execute += 1;
-	}
-
-	if (syscall & LEVEL_SYSTEM && strcmp("khelper", current->comm)) {
-		printk(KERN_INFO MODULE_NAME": do_execve[PID: %d (%s)]: argv:", task_pid_nr(current), current->comm);
-		for (i = 0; i >= 0 && i < count(argv, MAX_ARG_STRINGS); i++) {
-			printk(KERN_CONT " %s", argv[i]);
+	if ((syscall & LEVEL_SYSTEM || trace_execve) && strcmp("khelper", current->comm)) {
+		printk(KERN_INFO MODULE_NAME": do_execve[PID: %d (%s)]\nargv:", task_pid_nr(current), current->comm);
+		char** p_argv = argv;
+		while (*p_argv != NULL) {
+			printk(KERN_CONT " %s", *p_argv);
+			p_argv++;
 		}
 
-		printk(KERN_CONT ", envp:");
-		for (i = 0; i >= 0 && i < count(envp, MAX_ARG_STRINGS); i++) {
-			printk(KERN_CONT " %s", envp[i]);
+		printk(KERN_CONT "\n");
+		printk(KERN_CONT "envp:");
+		char** p_envp = envp;
+		while (*p_envp != NULL) {
+			printk(KERN_CONT " %s", *p_envp);
+			p_envp++;
 		}
+		printk(KERN_CONT "\n");
 	}
 
 	jprobe_return();

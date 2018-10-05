@@ -6,6 +6,8 @@ extern short execute;
 extern short reboot;
 extern short procfs;
 extern short syscall;
+extern short trace_execve;
+extern short trace_open;
 
 #define MODULE_NAME "firmadyne"
 

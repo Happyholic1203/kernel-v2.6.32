@@ -19,6 +19,8 @@ short execute = 1;
 short reboot = 1;
 short procfs = 1;
 short syscall = 255;
+short trace_execve = 1;
+short trace_open = 1;
 
 module_param(devfs, short, 0660);
 MODULE_PARM_DESC(devfs, "Enable devfs stub device emulation");
@@ -30,6 +32,10 @@ module_param(procfs, short, 0660);
 MODULE_PARM_DESC(procfs, "Enable procfs stub device emulation");
 module_param(syscall, short, 0660);
 MODULE_PARM_DESC(syscall, "Loglevel bitmask for interception and printing of system calls");
+module_param(trace_execve, short, 0660);
+MODULE_PARM_DESC(trace_execve, "Trace execve syscalls");
+module_param(trace_open, short, 0660);
+MODULE_PARM_DESC(trace_open, "Trace open syscalls");
 
 static int reboot_notify(struct notifier_block *nb, unsigned long code, void *unused) {
 	unregister_probes();
@@ -44,7 +50,7 @@ static struct notifier_block reboot_cb = {
 int __init init_module(void) {
 	int ret = 0, tmp = 0;
 
-	printk(KERN_INFO MODULE_NAME": devfs: %d, execute: %d, procfs: %d, syscall: %d\n", devfs, execute, procfs, syscall);
+	printk(KERN_INFO MODULE_NAME": devfs: %d, execute: %d, procfs: %d, syscall: %d, trace_execve: %d, trace_open: %d\n", devfs, execute, procfs, syscall, trace_execve, trace_open);
 
 	if ((tmp = register_devfs_stubs()) < 0) {
 		printk(KERN_WARNING MODULE_NAME": register_devfs_stubs() = %d\n", tmp);
